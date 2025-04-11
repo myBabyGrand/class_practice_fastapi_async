@@ -4,7 +4,8 @@ from contextlib import asynccontextmanager
 from typing import Iterator
 
 import anyio
-from fastapi import FastAPI, WebSocket
+import httpx
+from fastapi import FastAPI, WebSocket, requests
 from starlette.responses import HTMLResponse
 from starlette.websockets import WebSocketDisconnect
 
@@ -44,6 +45,39 @@ async def websocket_handler(websocket: WebSocket, client_id: int):
     except WebSocketDisconnect:
         ws_manager.disconnect(websocket, client_id)
 
+
+@app.get("/sync/posts")
+def get_posts_sync_handler():
+    start_time = time.perf_counter()
+
+    urls = [
+        "https://jsonplaceholder.typicode.com/posts",
+        "https://jsonplaceholder.typicode.com/posts",
+        "https://jsonplaceholder.typicode.com/posts",
+    ]
+    responses = []
+    for url in urls:
+        responses.append(requests.get(url))
+
+    end_time = time.perf_counter()
+    return {"duration": end_time - start_time}
+
+
+@app.get("/async/posts")
+async def get_posts_async_handler():
+    start_time = time.perf_counter()
+    urls = [
+        "https://jsonplaceholder.typicode.com/posts",
+        "https://jsonplaceholder.typicode.com/posts",
+        "https://jsonplaceholder.typicode.com/posts",
+    ]
+
+    async with httpx.AsyncClient() as client:
+        tasks = [client.get(url) for url in urls]
+        await asyncio.gather(*tasks)
+
+    end_time = time.perf_counter()
+    return {"duration": end_time - start_time}
 
 @app.get("/sync/sleep", include_in_schema=False)
 def get_sleep_handler():
