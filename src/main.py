@@ -10,6 +10,7 @@ from starlette.responses import HTMLResponse
 from starlette.websockets import WebSocketDisconnect
 
 from shared.chat import html
+from shared.message_broker import message_broker
 
 # from shared.message_broker import message_broker
 from shared.websocket import ws_manager
@@ -19,8 +20,8 @@ from user.sync_api import router as user_sync_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> Iterator[None]:
-    limiter = anyio.to_thread.current_default_thread_limiter()
-    limiter.total_tokens = 200
+    limiter = anyio.to_thread.current_default_thread_limiter() #anyio는 asyncio와 호환되는 3rd-party lib. 기능이 더 다양함
+    limiter.total_tokens = 200 #thread pool size 조절 가능
     yield
 
 
@@ -40,8 +41,9 @@ async def websocket_handler(websocket: WebSocket, client_id: int):
     try:
         while True:
             message = await websocket.receive_text()
-            await ws_manager.broadcast(sender_client_id=client_id, message=message)
-            # await message_broker.publish(client_id=client_id, message=message)
+            # await ws_manager.broadcast(sender_client_id=client_id, message=message)
+            # message_broker 사용
+            await message_broker.publish(client_id=client_id, message=message)
     except WebSocketDisconnect:
         ws_manager.disconnect(websocket, client_id)
 

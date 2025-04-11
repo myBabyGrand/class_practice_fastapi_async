@@ -43,5 +43,5 @@ class MessageBroker:
                 payload: MessagePayload = json.loads(message["data"])
                 await ws_manager.broadcast(sender_client_id=payload["client_id"], message=payload["message"])
 
-
-# message_broker = MessageBroker.init()
+#message_broker 사용
+message_broker = MessageBroker.init()
